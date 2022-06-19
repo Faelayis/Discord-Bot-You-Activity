@@ -1,0 +1,109 @@
+name: Publish
+
+on:
+    workflow_dispatch:
+        inputs:
+            bumpversion:
+                type: choice
+                description: Bump a package version
+                required: true
+                options:
+                    - patch
+                    - minor
+                    - major
+                    - premajor
+                    - preminor
+                    - prepatch
+            releases:
+                type: choice
+                description: Releases
+                required: true
+                options:
+                    - stable
+            prerelease:
+                description: "This is a pre-releasee"
+                required: false
+                type: boolean
+
+env:
+    Bumpversion: ${{ github.event.inputs.bumpversion }}
+
+jobs:
+    Releases:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                  ref: ${{ github.head_ref }}
+
+            - name: Setup Node
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18"
+
+            - name: Bump a package version
+              id: bump_version
+              run: |
+                  npm install -g version-bump-prompt
+                  bump $Bumpversion ./package.json
+
+            - name: Install Dependencies
+              if: steps.bump_version.outcome == 'success'
+              id: npm_install
+              run: npm install
+
+            - name: Get Version
+              if: steps.npm_install.outcome == 'success'
+              id: get_version
+              uses: Saionaro/extract-package-version@v1.0.6
+
+            - name: Automatically Commit Changed
+              if: steps.get_version.outcome == 'success'
+              id: commit_changed
+              uses: stefanzweifel/git-auto-commit-action@v4
+              with:
+                  push_options: "--force"
+                  commit_options: "--no-verify"
+                  commit_message: "New Releases ${{ steps.get_version.outputs.version }}"
+                  commit_user_name: GitHub Actions
+                  commit_user_email: actions@github.com
+                  tagging_message: v${{ steps.get_version.outputs.version }}
+                  commit_author: GitHub Actions <actions@github.com>
+                  skip_checkout: true
+
+            # https://raw.githack.com/jaywcjlove/changelog-generator/dadc68a/index.html#getting-started
+            - name: Generate Changelog
+              id: changelog
+              uses: jaywcjlove/changelog-generator@v1.5.7
+              if: steps.commit_changed.outcome == 'success'
+              with:
+                token: ${{ secrets.GITHUB_TOKEN }}
+                head-ref: ${{steps.create_tag.outputs.version}}
+                filter-author: (!actions-user)
+                filter: (^[\s]+?[R|r]elease)|(^[R|r]elease)
+                original-markdown: true
+
+            - name: Create Release
+              if: steps.changelog.outcome == 'success'
+              uses: actions/create-release@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                release_name: ${{ steps.get_version.outputs.version }}
+                tag_name: v${{ steps.get_version.outputs.version }}
+                body: |
+                  ${{ steps.changelog.outputs.compareurl }}
+                  ${{ steps.changelog.outputs.changelog }}
+                prerelease: ${{ github.event.inputs.prerelease }}
+                draft: false
+
+            # - name: Deploy To Heroku
+            #   uses: akhileshns/heroku-deploy@v3.12.12
+            #   if: steps.create_tag.outputs.successful
+            #   with:
+            #     heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+            #     heroku_app_name: ''
+            #     heroku_email: ''
+            #     branch: 'master'
+            
