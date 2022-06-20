@@ -8,7 +8,7 @@ export default new Event("voiceStateUpdate", async (oldVoiceState, newVoiceState
 	if (newVoiceState.guild?.id !== process.env.guildId) return;
 	if (newVoiceState.channel) {
 		log("voiceStateUpdate", `${newVoiceState.member?.user.tag} Connected to ${newVoiceState.channel.name}.`, "event");
-		tracker(oldVoiceState, newVoiceState);
+		new tracker(oldVoiceState, newVoiceState);
 	} else if (oldVoiceState.channel) {
 		log("voiceStateUpdate", `${oldVoiceState.member?.user.tag} Disconnected from ${oldVoiceState.channel.name}.`, "event");
 		const channel = client.channels.cache.get(`${process.env.channels}`) as TextChannel;
@@ -16,6 +16,7 @@ export default new Event("voiceStateUpdate", async (oldVoiceState, newVoiceState
 			if (!message.size) return;
 			message.forEach((msg: Message) => {
 				if (msg.content.split(" ")[1] === oldVoiceState.member?.user.id) msg.delete();
+				else if (msg.embeds[0].footer?.iconURL?.includes(`${oldVoiceState.member?.user.id}`)) msg.delete();
 			});
 		});
 	}
