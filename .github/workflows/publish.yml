@@ -98,6 +98,14 @@ jobs:
                 prerelease: ${{ github.event.inputs.prerelease }}
                 draft: false
 
+            - name: Discord Webhook
+              uses: tsickert/discord-webhook@v4.0.0
+              if: steps.create_tag.outputs.successful
+              with:
+                webhook-url: ${{ secrets.WEBHOOK_URL }}
+                embed-title: 'New releases ${{ steps.get_version.outputs.version }}'
+                embed-description: '${{ steps.changelog.outputs.changelog }}'
+
             # - name: Deploy To Heroku
             #   uses: akhileshns/heroku-deploy@v3.12.12
             #   if: steps.create_tag.outputs.successful
