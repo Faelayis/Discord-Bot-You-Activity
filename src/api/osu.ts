@@ -1,4 +1,4 @@
-import { ChartConfiguration } from "chart.js";
+import { ChartTooltipOptions, ChartConfiguration } from "chart.js";
 import { Profile, UserBest } from "../types/api/osu";
 import log from "../util/logger";
 import Osu from "node-osu";
@@ -54,7 +54,7 @@ export default async (user: string, mode?: string | null) => {
 			backgroundColor: "transparent",
 			tension: 0.1,
 			fill: false,
-		} as any,
+		} as ChartTooltipOptions,
 		chartJS = {
 			type: "line",
 			data: {
