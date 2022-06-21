@@ -53,7 +53,10 @@ export default class Tracker {
 			return channel.messages.fetch().then((message) => {
 				if (!message.size) return;
 				message.forEach((msg) => {
-					if (msg.content.split(" ")[1] === data.member?.user.id && msg.author.id === client.application?.id) {
+					if (
+						(msg.content.split(" ")[1] === data.member?.user.id && msg.author.id === client.application?.id) ||
+						msg.embeds[0].footer?.iconURL?.includes(`${data.member?.user.id}`)
+					) {
 						log("tracker", `Edit Embeds User: ${data.member?.user.username}#${data.member?.user.discriminator} = nothing`);
 						return msg.edit({ embeds: [], files: [] });
 					}
@@ -195,7 +198,10 @@ export default class Tracker {
 					return channel.messages.fetch().then((message) => {
 						if (!message.size) return;
 						message.forEach((msg) => {
-							if (msg.content.split(" ")[1] === data.member?.user.id && msg.author.id === client.application?.id) {
+							if (
+								(msg.content.split(" ")[1] === data.member?.user.id && msg.author.id === client.application?.id) ||
+								msg.embeds[0].footer?.iconURL?.includes(`${data.member?.user.id}`)
+							) {
 								return this.send(channel, data, activity.name, {
 									color: "GREEN",
 									description: activity.details && activity.state ? `${activity.details}\n${activity.state}` : activity.details ?? "",
